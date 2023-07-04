@@ -1,0 +1,114 @@
+/**************************************************************************************************/
+/**************************************************************************************************/
+/**************************************************************************************************/
+/*								 Author : Abdelrahman Elnahas 									  */									
+/*								 SWC	: RCC													  */
+/*								 Layer  : MCAL													  */
+/**************************************************************************************************/
+/**************************************************************************************************/
+/**************************************************************************************************/
+
+
+#include "STD_TYPES.h"
+#include "BIT_MATH.h"
+
+#include "RCC_interface.h"
+#include "RCC_private.h"
+#include "RCC_config.h"
+
+
+void RCC_vidSysClkInit(void)
+{
+	/*RCC_CR*/
+	#if RCC_CLOCK_SOURCE == RCC_HSI
+	SET_BIT(RCC_CR , 0);
+	CLR_BIT(RCC_CFGR , 0);
+	CLR_BIT(RCC_CFGR , 1);
+	
+	#elif RCC_CLOCK_SOURCE == RCC_HSE
+	SET_BIT(RCC_CR , 16);
+	SET_BIT(RCC_CFGR , 0);
+	CLR_BIT(RCC_CFGR , 1);
+	
+	
+	#elif RCC_CLOCK_SOURCE == RCC_PLL
+	/*Set div factor*/
+	RCC_PLLCFGR &= PLLM_MASK ;
+	RCC_PLLCFGR |= PLLM  ;
+	
+	/*set mul factor*/
+	RCC_PLLCFGR &= PLLN_MASK ;
+	RCC_PLLCFGR |= (PLLN <<6) ;
+
+	/*Set div factor*/
+	RCC_PLLCFGR &= PLLP_MASK ;
+	RCC_PLLCFGR |= PLLP<16  ;
+	/*Slect the source of PLL*/
+		#if PLL_SOURCE == RCC_HSI
+		/*Enable HSI*/
+		CLR_BIT(RCC_PLLCFGR , 22);
+		/*Select HSI as source to PLL*/
+		SET_BIT(RCC_CR , 0);
+		#elif PLL_SOURCE == RCC_HSE
+		/*Enable HSE*/
+		SET_BIT(RCC_PLLCFGR , 22);
+		/*Select HSI as source to PLL*/
+		SET_BIT(RCC_CR , 16);
+		#endif
+	/*Enable PLL*/
+	SET_BIT(RCC_CR , 24);
+	CLR_BIT(RCC_CFGR , 0);
+	SET_BIT(RCC_CFGR , 1);
+
+	#endif
+	
+	/*AHB1 Bus Speed*/
+	RCC_CFGR &= AHB1_MASK ;
+	RCC_CFGR |= (AHB1_PRESCALER<<4);
+	
+	/*APB1 Bus Speed*/
+	RCC_CFGR &= APB1_MASK ;
+	RCC_CFGR |= (APB1_PRESCALER<<10);
+	
+	/*APB2 Bus Speed*/
+	RCC_CFGR &= APB2_MASK ;
+	RCC_CFGR |= (APB2_PRESCALER<<13);
+}
+
+void RCC_vidEnablePerClk(u8 Copy_u8BusId , u8 Copy_u8PerId)
+{
+	/*Range Check*/
+	if (Copy_u8BusId < 3 && Copy_u8PerId < 31)
+	{
+		switch (Copy_u8BusId)
+		{
+			case RCC_AHB1 :	SET_BIT(RCC_AHB1ENR , Copy_u8PerId); break; 
+			case RCC_APB1 : SET_BIT(RCC_APB1ENR , Copy_u8PerId); break; 
+			case RCC_APB2 : SET_BIT(RCC_APB2ENR , Copy_u8PerId); break; 
+			default : break;	
+		}
+	}
+	else
+	{
+		/*Report Error*/
+	}
+}
+
+void RCC_vidDisablePerClk(u8 Copy_u8BusId , u8 Copy_u8PerId)
+{
+	/*Range Check*/
+	if (Copy_u8BusId < 3 && Copy_u8PerId < 31)
+	{
+		switch (Copy_u8BusId)
+		{
+			case RCC_AHB1 :	CLR_BIT(RCC_AHB1ENR , Copy_u8PerId); break; 
+			case RCC_APB1 : CLR_BIT(RCC_APB1ENR , Copy_u8PerId); break; 
+			case RCC_APB2 : CLR_BIT(RCC_APB2ENR , Copy_u8PerId); break; 
+			default : break;	
+		}
+	}
+	else
+	{
+		/*Report Error*/
+	}	
+}
